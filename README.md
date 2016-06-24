@@ -1,6 +1,6 @@
 # Static Base Preset
 
-A pre-build setup using [`static-base`](https://github.com/icidasset/static-base).
+A [`static-base`](https://github.com/icidasset/static-base) setup.
 
 
 

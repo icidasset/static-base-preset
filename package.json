@@ -1,7 +1,7 @@
 {
   "name": "static-base-preset",
   "version": "0.1.0",
-  "description": "A pre-build setup using static-base",
+  "description": "A static-base setup",
   "main": "lib/index.js",
   "jsnext:main": "lib/index.js",
   "keywords": [
