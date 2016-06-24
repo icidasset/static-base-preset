@@ -1,0 +1,36 @@
+{
+  "name": "static-base-preset",
+  "version": "0.1.0",
+  "description": "A pre-build setup using static-base",
+  "main": "lib/index.js",
+  "jsnext:main": "lib/index.js",
+  "keywords": [
+    "static"
+  ],
+  "author": "icid.asset@gmail.com",
+  "license": "MIT",
+  "repository": "icidasset/static-base-preset",
+  "dependencies": {
+    "bluebird": "^3.4.1",
+    "chalk": "^1.1.3",
+    "chokidar": "^1.6.0",
+    "express": "^4.14.0",
+    "gray-matter": "^2.0.2",
+    "minimatch": "^3.0.2",
+    "static-base": "^0.4.1"
+  },
+  "scripts": {
+    "compile": "babel -d lib/ src/",
+    "docs": "jsdoc --configure .jsdoc.json",
+    "prepublish": "npm run compile",
+    "test": "rm -rf ./build && ava"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.10.1",
+    "babel-core": "^6.10.4",
+    "babel-preset-metalab": "^0.2.1",
+    "docdash": "^0.4.0",
+    "jsdoc": "^3.4.0",
+    "mustache": "^2.2.1"
+  }
+}
