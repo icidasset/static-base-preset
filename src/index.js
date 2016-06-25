@@ -4,6 +4,9 @@ import Promise from 'bluebird';
 import server from './tasks/server';
 import watch from './tasks/watch';
 
+export { default as metadata } from './metadata';
+export * from './utils';
+
 
 /**
  * A sequence is a function that returns a promise for a Dictionary.
@@ -17,43 +20,15 @@ import watch from './tasks/watch';
 
 
 /**
- * Execute procedure.
- *
- * Makes a build and depending on the given arguments,
- * runs a web server and watches for changes.
- *
- * @param {sequence[]} sequences - Array of sequences
- */
-export function exec(sequences, givenOptions) {
-  const args = getProcessArguments();
-  const make = generateMakeFunction(sequences);
-  const options = { ...defaultOptions(), ...givenOptions };
-
-  let promise = make(options);
-
-  if (args.watch) promise = continueIfBuildSucceeded(promise, () => watch(make, options));
-  if (args.serve) promise = continueIfBuildSucceeded(promise, () => server(options));
-}
-
-
-/**
- * Metadata function, builds metadata object.
- * See `src/metadata` for what it actually does.
- *
- * @param {Object} [initial={}]
- */
-export { default as metadata } from './metadata';
-
-
-/**
- * Other exports
- */
-export { default as frontmatter } from './functions/frontmatter';
-export * from './utils';
-
-
-/**
- * @private
+ * The default options.
+ * @namespace
+ * @property {string} buildDirectory='./build' - The output directory
+ * @property {string} sourceDirectory='./src' - The input directory (used by `watch` task)
+ * @property {string} rootDirectory=__dirname - The root directory
+ * @property {number} serverPort=8080 - The port used by the server
+ * @property {boolean} clientSideRouting=true - See the
+ *   [surge.sh docs](https://surge.sh/help/adding-a-200-page-for-client-side-routing)
+ *   for more info.
  */
 const defaultOptions = () => ({
   buildDirectory: './build',
@@ -61,45 +36,70 @@ const defaultOptions = () => ({
   rootDirectory: __dirname,
 
   serverPort: 8080,
+  clientSideRouting: true,
 });
 
 
-const getProcessArguments = () => ({
+/**
+ * Execute procedure.
+ *
+ * Makes a build and depending on the given arguments,
+ * runs a web server and watches for changes.
+ *
+ * @param {sequence[]} sequences - Array of sequences
+ */
+export function exec(sequences, options) {
+  const args = flags();
+  const make = supervise(sequences);
+  const opts = { ...defaultOptions(), ...options };
+
+  let promise = make(opts);
+
+  if (args.watch) promise = promise.then(() => watch(make, opts));
+  if (args.serve) promise = promise.then(() => server(opts));
+
+  return promise;
+}
+
+
+/**
+ * @private
+ */
+const flags = () => ({
   serve: process.argv.includes('--serve'),
   watch: process.argv.includes('--watch'),
 });
 
 
-const generateMakeFunction = (sequences) => (options) => {
+const supervise = (sequences) => (options) => {
   console.log(chalk.bold('Processing ...'));
 
-  return execSequences(sequences, options).then(() => {
+  return execSequences(sequences, options).then(results => {
     console.log(chalk.bold.green('Build successful!'));
-    return { success: true };
+    return results;
 
-  }).catch((err) => {
+  }).catch(err => {
     console.log(chalk.bold.red(err.stack || err));
-    return { success: false };
+    throw new Error(err);
 
-  });
-};
-
-
-const continueIfBuildSucceeded = (promise, fn) => {
-  return promise.then(value => {
-    if (typeof value === "object" && value.success === true) {
-      return fn().then(() => value);
-    }
-
-    return value;
   });
 };
 
 
 const execSequences = (sequences, options) => {
-  const data = { priv: { ...options, root: options.rootDirectory }};
+  // attributes passed to every sequence
+  const attr = { priv: { ...options, root: options.rootDirectory }};
 
-  return sequences.reduce((promise, sequence) => {
-    return promise.then(() => sequence(data));
-  }, Promise.resolve([]));
+  // execute every sequence and return promise
+  let promise = Promise.resolve();
+  let results = [];
+
+  sequences.forEach(sequence => {
+    promise = promise.then(result => {
+      if (result) results.push(result);
+      return sequence(attr);
+    });
+  });
+
+  return promise.then(lastResult => [...results, lastResult]);
 };
