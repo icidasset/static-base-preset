@@ -22,7 +22,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#exec">exec</a></li><li><a href="global.html#runWithMessageAndLimiter">runWithMessageAndLimiter</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="defaultOptions.html">defaultOptions</a></li></ul><h3>Global</h3><ul><li><a href="global.html#exec">exec</a></li><li><a href="global.html#isEnv">isEnv</a></li><li><a href="global.html#runWithMessageAndLimiter">runWithMessageAndLimiter</a></li></ul>
 </nav>
 
 <div id="main">
@@ -42,13 +42,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.frontmatter = exports.metadata = void 0;
-
-var _typeof = typeof Symbol === "function" &amp;&amp; typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj &amp;&amp; typeof Symbol === "function" &amp;&amp; obj.constructor === Symbol ? "symbol" : typeof obj; };
+exports.metadata = void 0;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i &lt; arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-exports.exec = exec;
 
 var _metadata = require('./metadata');
 
@@ -57,19 +53,6 @@ Object.defineProperty(exports, 'metadata', {
   get: function () {
     function get() {
       return _interopRequireDefault(_metadata)['default'];
-    }
-
-    return get;
-  }()
-});
-
-var _frontmatter = require('./functions/frontmatter');
-
-Object.defineProperty(exports, 'frontmatter', {
-  enumerable: true,
-  get: function () {
-    function get() {
-      return _interopRequireDefault(_frontmatter)['default'];
     }
 
     return get;
@@ -91,6 +74,7 @@ Object.keys(_utils).forEach(function (key) {
     }()
   });
 });
+exports.exec = exec;
 
 var _chalk = require('chalk');
 
@@ -121,38 +105,15 @@ function _interopRequireDefault(obj) { return obj &amp;&amp; obj.__esModule ? ob
  */
 
 /**
- * Execute procedure.
- *
- * Makes a build and depending on the given arguments,
- * runs a web server and watches for changes.
- *
- * @param {sequence[]} sequences - Array of sequences
- */
-function exec(sequences, givenOptions) {
-  var args = getProcessArguments();
-  var make = generateMakeFunction(sequences);
-  var options = _extends({}, defaultOptions(), givenOptions);
-
-  var promise = make(options);
-
-  if (args.watch) promise = continueIfBuildSucceeded(promise, function () {
-    return (0, _watch2['default'])(make, options);
-  });
-  if (args.serve) promise = continueIfBuildSucceeded(promise, function () {
-    return (0, _server2['default'])(options);
-  });
-}
-
-/**
- * Metadata function, builds metadata object.
- * See `src/metadata` for what it actually does.
- *
- * @param {Object} [initial={}]
- */
-
-
-/**
- * @private
+ * The default options.
+ * @namespace
+ * @property {string} buildDirectory='./build' - The output directory
+ * @property {string} sourceDirectory='./src' - The input directory (used by `watch` task)
+ * @property {string} rootDirectory=__dirname - The root directory
+ * @property {number} serverPort=8080 - The port used by the server
+ * @property {boolean} clientSideRouting=true - See the
+ *   [surge.sh docs](https://surge.sh/help/adding-a-200-page-for-client-side-routing)
+ *   for more info.
  */
 var defaultOptions = function defaultOptions() {
   return {
@@ -160,51 +121,78 @@ var defaultOptions = function defaultOptions() {
     sourceDirectory: './src',
     rootDirectory: __dirname,
 
-    serverPort: 8080
+    serverPort: 8080,
+    clientSideRouting: true
   };
 };
 
-var getProcessArguments = function getProcessArguments() {
+/**
+ * Execute procedure.
+ *
+ * Makes a build and depending on the given arguments,
+ * runs a web server and watches for changes.
+ *
+ * @param {sequence[]} sequences - Array of sequences
+ */
+function exec(sequences, options) {
+  var args = flags();
+  var make = supervise(sequences);
+  var opts = _extends({}, defaultOptions(), options);
+
+  var promise = make(opts);
+
+  if (args.watch) promise = promise.then(function () {
+    return (0, _watch2['default'])(make, opts);
+  });
+  if (args.serve) promise = promise.then(function () {
+    return (0, _server2['default'])(opts);
+  });
+
+  return promise;
+}
+
+/**
+ * @private
+ */
+var flags = function flags() {
   return {
     serve: process.argv.includes('--serve'),
     watch: process.argv.includes('--watch')
   };
 };
 
-var generateMakeFunction = function generateMakeFunction(sequences) {
+var supervise = function supervise(sequences) {
   return function (options) {
     console.log(_chalk2['default'].bold('Processing ...'));
 
-    return execSequences(sequences, options).then(function () {
+    return execSequences(sequences, options).then(function (results) {
       console.log(_chalk2['default'].bold.green('Build successful!'));
-      return { success: true };
+      return results;
     })['catch'](function (err) {
       console.log(_chalk2['default'].bold.red(err.stack || err));
-      return { success: false };
+      throw new Error(err);
     });
   };
 };
 
-var continueIfBuildSucceeded = function continueIfBuildSucceeded(promise, fn) {
-  return promise.then(function (value) {
-    if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === "object" &amp;&amp; value.success === true) {
-      return fn().then(function () {
-        return value;
-      });
-    }
-
-    return value;
-  });
-};
-
 var execSequences = function execSequences(sequences, options) {
-  var data = { priv: _extends({}, options, { root: options.rootDirectory }) };
+  // attributes passed to every sequence
+  var attr = { priv: _extends({}, options, { root: options.rootDirectory }) };
 
-  return sequences.reduce(function (promise, sequence) {
-    return promise.then(function () {
-      return sequence(data);
+  // execute every sequence and return promise
+  var promise = _bluebird2['default'].resolve();
+  var results = [];
+
+  sequences.forEach(function (sequence) {
+    promise = promise.then(function (result) {
+      if (result) results.push(result);
+      return sequence(attr);
     });
-  }, _bluebird2['default'].resolve([]));
+  });
+
+  return promise.then(function (lastResult) {
+    return [].concat(results, [lastResult]);
+  });
 };</code></pre>
         </article>
     </section>
@@ -217,7 +205,7 @@ var execSequences = function execSequences(sequences, options) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Fri Jun 24 2016 16:39:00 GMT+0200 (CEST) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sat Jun 25 2016 21:14:13 GMT+0200 (CEST) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>
