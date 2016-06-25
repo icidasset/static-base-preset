@@ -6,7 +6,7 @@ import Promise from 'bluebird';
 import { renderErrorsFromPromise } from '../utils';
 
 
-export default function(make, options) {
+export default function watch(make, options) {
   const cwd = options.rootDirectory;
   const src = cleanPath(options.sourceDirectory);
   const pattern = `${src}/**/*`;

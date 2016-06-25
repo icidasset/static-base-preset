@@ -4,6 +4,17 @@ import minimatch from 'minimatch';
 import Promise from 'bluebird';
 
 
+/**
+ * Utility function to check against the current environment name.
+ * Example, `isEnv('development') === true`.
+ *
+ * Also available:
+ *
+ * ```
+ * isDevelopmentEnv();
+ * isProductionEnv();
+ * ```
+ */
 export const isEnv = (env) => process.env.ENV === env;
 export const isDevelopmentEnv = () => isEnv('development');
 export const isProductionEnv = () => isEnv('production');
