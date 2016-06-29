@@ -80,7 +80,6 @@ const supervise = (sequences) => (options) => {
 
   }).catch(err => {
     console.log(chalk.bold.red(err.stack || err));
-    throw new Error(err);
 
   });
 };

@@ -1,6 +1,6 @@
 {
   "name": "static-base-preset",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A static-base setup",
   "main": "lib/index.js",
   "jsnext:main": "lib/index.js",
@@ -32,6 +32,6 @@
     "docdash": "^0.4.0",
     "jsdoc": "^3.4.0",
     "mustache": "^2.2.1",
-    "static-base-contrib": "^0.6.0"
+    "static-base-contrib": "^0.6.1"
   }
 }
