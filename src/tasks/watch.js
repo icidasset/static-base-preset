@@ -13,7 +13,7 @@ export default function watch(make, options) {
 
   chokidar.watch(pattern, { cwd, ignoreInitial: true }).on('all', (event, path) => {
     console.log(`{watch:${event}}`, path);
-    make({ ...options, changedPath: path });
+    make({ ...options, changedPath: path }).catchReturn();
   });
 
   return Promise.resolve();

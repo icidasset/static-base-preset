@@ -1,6 +1,6 @@
 {
   "name": "static-base-preset",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A static-base setup",
   "main": "lib/index.js",
   "jsnext:main": "lib/index.js",

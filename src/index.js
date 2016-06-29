@@ -47,6 +47,7 @@ const defaultOptions = () => ({
  * runs a web server and watches for changes.
  *
  * @param {sequence[]} sequences - Array of sequences
+ * @return {Promise}
  */
 export function exec(sequences, options) {
   const args = flags();
@@ -58,7 +59,7 @@ export function exec(sequences, options) {
   if (args.watch) promise = promise.then(() => watch(make, opts));
   if (args.serve) promise = promise.then(() => server(opts));
 
-  return promise;
+  return promise.catch(error => ({ error }));
 }
 
 
@@ -80,6 +81,7 @@ const supervise = (sequences) => (options) => {
 
   }).catch(err => {
     console.log(chalk.bold.red(err.stack || err));
+    throw new Error(err);
 
   });
 };
