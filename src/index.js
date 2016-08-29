@@ -1,8 +1,7 @@
 import chalk from 'chalk';
-import Promise from 'bluebird';
-
 import server from './tasks/server';
 import watch from './tasks/watch';
+import Promise from 'bluebird';
 
 export { default as metadata } from './metadata';
 export * from './utils';
@@ -15,6 +14,7 @@ export * from './utils';
  *
  * @callback sequence
  * @param {Object} data - Metadata for the sequence function (default is `{ changedPath, root }`)
+ * @param {*[]} result - The result of the previous sequence
  * @return {Promise} A promise for a Dictionary
  */
 
@@ -47,6 +47,7 @@ const defaultOptions = () => ({
  * runs a web server and watches for changes.
  *
  * @param {sequence[]} sequences - Array of sequences
+ * @return {Promise}
  */
 export function exec(sequences, options) {
   const args = flags();
@@ -58,7 +59,7 @@ export function exec(sequences, options) {
   if (args.watch) promise = promise.then(() => watch(make, opts));
   if (args.serve) promise = promise.then(() => server(opts));
 
-  return promise;
+  return promise.catch(error => ({ error }));
 }
 
 
@@ -97,7 +98,7 @@ const execSequences = (sequences, options) => {
   sequences.forEach(sequence => {
     promise = promise.then(result => {
       if (result) results.push(result);
-      return sequence(attr);
+      return sequence(attr, result);
     });
   });
 

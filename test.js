@@ -1,7 +1,6 @@
+import { exec, runWithMessageAndLimiter } from './lib';
 import { read } from 'static-base-contrib';
 import test from 'ava';
-
-import { exec, runWithMessageAndLimiter } from './lib';
 
 
 test('exec', async t => {
