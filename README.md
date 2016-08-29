@@ -7,7 +7,7 @@ It includes:
 - A simple file watcher.
 - A utility function that wraps the `static-base.run` function,
   which makes it a sequence that only runs when needed and logs a message.
-- A metadata function.
+- Metadata functions (store_env_info).
 - Utility functions for checking the current environment.
 
 
@@ -19,19 +19,22 @@ import { exec, runWithMessageAndLimiter } from 'static-base-preset';
 import { read, frontmatter, write } from 'static-base-contrib';
 
 
-const BUILD_DIR = './build';
-const SRC_DIR = './src';
-
 const markdown = (files) => files.map(file => ({
   ...file,
   content: renderMarkdown(file.content),
 }));
 
-const sequence = (attr) => runWithMessageAndLimiter
+
+const sequence = (attr, resultOfPreviousSequence) => runWithMessageAndLimiter
   ('Reading and writing')
   (attr.priv.changedPath)
-  (read, frontmatter, markdown, [write, BUILD_DIR])
-  (`${SRC_DIR}/*.md`, attr.priv.root);
+  (
+    read,
+    frontmatter,
+    markdown,
+    [write, attr.priv.buildDirectory]
+  )
+  (`${attr.priv.sourceDirectory}/*.md`, attr.priv.root);
 
 
 exec([
@@ -39,14 +42,25 @@ exec([
 
 ], {
   rootDirectory: __dirname,
-  buildDirectory: BUILD_DIR,
-  sourceDirectory: SRC_DIR,
+  buildDirectory: 'build',
+  sourceDirectory: 'src',
 
 }).then(
   results => console.log('Success!', results),
   error => console.error(error.stack || error.toString())
 
-)
+);
+```
+
+__Flags__
+
+```bash
+--watch # Watch for changes in the source directory
+--serve # Set up a server for the build directory
+
+# Example
+
+npm run dev -- --watch --serve
 ```
 
 

@@ -1,9 +1,9 @@
+import { renderErrorsFromPromise } from '../utils';
 import { resolve } from 'path';
-import { cleanPath } from 'static-base/lib/utils';
+import { cleanPath } from 'static-base';
+import chalk from 'chalk';
 import chokidar from 'chokidar';
 import Promise from 'bluebird';
-
-import { renderErrorsFromPromise } from '../utils';
 
 
 export default function watch(make, options) {
@@ -15,6 +15,8 @@ export default function watch(make, options) {
     console.log(`{watch:${event}}`, path);
     make({ ...options, changedPath: path }).catchReturn();
   });
+
+  console.log(chalk.bold.magenta(`Watching ${pattern}`));
 
   return Promise.resolve();
 }

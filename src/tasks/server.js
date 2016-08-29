@@ -10,7 +10,7 @@ export default function server(options) {
 
   // routes
   app.use(express.static(buildDir));
-  app.use((req, res) => {
+  app.use((_, res) => {
     let status = options.clientSideRouting ?
       200 :
       404 ;
