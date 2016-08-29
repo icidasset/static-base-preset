@@ -14,7 +14,7 @@ export * from './utils';
  *
  * @callback sequence
  * @param {Object} data - Metadata for the sequence function (default is `{ changedPath, root }`)
- * @param {*[]} result - The result of the previous sequence
+ * @param {Array} result - The result of the previous sequence
  * @return {Promise} A promise for a Dictionary
  */
 
