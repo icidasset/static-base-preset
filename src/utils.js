@@ -1,4 +1,4 @@
-import { run } from 'static-base';
+import { cleanPath, run } from 'static-base';
 import chalk from 'chalk';
 import minimatch from 'minimatch';
 import Promise from 'bluebird';
@@ -49,8 +49,9 @@ export const runWithMessageAndLimiter =
   (...sequenceItems) =>
   (...args) => {
     const pattern = limiterPattern || (typeof args[0] === 'string' ? args[0] : undefined);
+    const cleanPattern = pattern && cleanPath(pattern, { beginning: true });
 
-    if (!limiter || (pattern && minimatch(limiter, pattern))) {
+    if (!limiter || (cleanPattern && minimatch(limiter, cleanPattern))) {
       console.log(chalk.bold.yellow(msg));
       return run(...sequenceItems)(...args);
     }
